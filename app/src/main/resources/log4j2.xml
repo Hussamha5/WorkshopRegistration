@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Log4j 2 configuration of workshop-cli -->
+<Configuration status="WARN">
+    <Appenders>
+        <Console name="Console" target="SYSTEM_OUT">
+            <PatternLayout pattern="%d{HH:mm:ss.SSS} %-5level %c{1} - %msg%n"/>
+        </Console>
+    </Appenders>
+    <Loggers>
+        <!-- our own code: info and above (creations = info, rejections = warn) -->
+        <Logger name="patmal.workshops.student.impl" level="info" additivity="false">
+            <AppenderRef ref="Console"/>
+        </Logger>
+        <!-- all the libraries: only warnings and errors -->
+        <Root level="warn">
+            <AppenderRef ref="Console"/>
+        </Root>
+    </Loggers>
+</Configuration>
