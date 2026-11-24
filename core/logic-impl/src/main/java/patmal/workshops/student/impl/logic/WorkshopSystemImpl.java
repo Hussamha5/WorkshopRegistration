@@ -1,5 +1,8 @@
 package patmal.workshops.student.impl.logic;
 
+import org.apache.commons.csv.CSVFormat;
+import org.apache.commons.csv.CSVParser;
+import org.apache.commons.csv.CSVRecord;
 import org.apache.commons.validator.routines.EmailValidator;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -14,8 +17,14 @@ import patmal.workshops.student.impl.model.TeamImpl;
 import patmal.workshops.student.impl.model.WorkshopImpl;
 
 import java.io.File;
+import java.io.IOException;
+import java.io.Reader;
+import java.io.UncheckedIOException;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -256,6 +265,57 @@ public class WorkshopSystemImpl implements WorkshopSystem {
     public void exportTeamsDataToJson(File targetFileName) {
         jsonExporter.write(targetFileName, jsonExporter.buildTeams(getTeams()));
         log.info("Exported {} teams to {}", teams.size(), targetFileName);
+    }
+
+    // ---------------- importing (bonus) ----------------
+
+    /**
+     * Registers students from a UTF-8 CSV file with the header line "id,name,email".
+     * Every line is registered exactly as if createStudent had been called with its values.
+     * The import stops at the first rejected line (IllegalArgumentException); the students
+     * of the lines before it stay registered.
+     */
+    @Override
+    public List<Student> importStudentDataFromFile(File source) {
+        if (source == null) {
+            throw rejected("Source file must not be null");
+        }
+        List<Student> imported = new ArrayList<>();
+        // CSVFormat.DEFAULT: comma separated, values may be quoted, empty lines are ignored
+        try (Reader reader = Files.newBufferedReader(source.toPath(), StandardCharsets.UTF_8);
+             CSVParser parser = CSVFormat.DEFAULT.parse(reader)) {
+
+            Iterator<CSVRecord> lines = parser.iterator();
+            if (!lines.hasNext()) {
+                throw rejected("The file " + source + " is empty (no header line)");
+            }
+            checkHeader(lines.next(), source);
+
+            while (lines.hasNext()) {
+                CSVRecord line = lines.next();
+                if (line.size() != 3) {
+                    throw rejected("Line " + line.getRecordNumber() + " of " + source
+                            + " must have exactly 3 values (id, name, email) but has " + line.size());
+                }
+                // the same rules as createStudent: a rejected line throws and stops the import
+                imported.add(createStudent(line.get(0), line.get(1), line.get(2)));
+            }
+        } catch (IOException e) {
+            throw new UncheckedIOException("Cannot read the file " + source, e);
+        }
+        log.info("Imported {} students from {}", imported.size(), source);
+        return imported;
+    }
+
+    private void checkHeader(CSVRecord header, File source) {
+        String first = header.size() > 0 ? header.get(0).replace("\uFEFF", "") : ""; // ignore a UTF-8 BOM
+        boolean ok = header.size() == 3
+                && first.equals("id")
+                && header.get(1).equals("name")
+                && header.get(2).equals("email");
+        if (!ok) {
+            throw rejected("Wrong header line in " + source + ": expected id,name,email");
+        }
     }
 
     // ---------------- helpers ----------------

@@ -24,11 +24,22 @@ mvn clean install
 
 The runnable uber jar is created at `app/target/workshop-cli.jar`.
 
+The build also runs the tester automatically in the `verify` phase (bonus 8.2,
+`exec-maven-plugin` in `app/pom.xml`). If the tester fails, the build fails.
+
 ## Run
 
+The demo students are imported from a CSV file (bonus 8.1).
+
+With the `students.csv` that is packed inside the jar (`app/src/main/resources/students.csv`):
 ```
 java -jar app/target/workshop-cli.jar
 ```
+With your own CSV file (header line `id,name,email`):
+```
+java -jar app/target/workshop-cli.jar my-students.csv
+```
+The application writes `instructors.json`, `students.json` and `teams.json` to the current folder.
 
 ## Run the tester
 

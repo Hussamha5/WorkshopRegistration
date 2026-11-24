@@ -40,6 +40,14 @@
             <artifactId>log4j-core</artifactId>
             <scope>runtime</scope>
         </dependency>
+
+        <!-- the tester: needed only by the build (bonus 8.2), so "test" scope:
+             it is not packed into the uber jar -->
+        <dependency>
+            <groupId>patmal.workshops</groupId>
+            <artifactId>workshop-tester</artifactId>
+            <scope>test</scope>
+        </dependency>
     </dependencies>
 
     <build>
@@ -72,6 +80,31 @@
                         <goals>
                             <goal>single</goal>
                         </goals>
+                    </execution>
+                </executions>
+            </plugin>
+
+            <!-- bonus 8.2: run the tester in the verify phase; a failing tester fails the build -->
+            <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>exec-maven-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>run-workshop-tester</id>
+                        <phase>verify</phase>
+                        <goals>
+                            <goal>exec</goal>
+                        </goals>
+                        <configuration>
+                            <executable>java</executable>
+                            <!-- the class path of the "test" scope: our modules, their libraries and the tester -->
+                            <classpathScope>test</classpathScope>
+                            <arguments>
+                                <argument>-classpath</argument>
+                                <classpath/>
+                                <argument>patmal.workshops.main.Main</argument>
+                            </arguments>
+                        </configuration>
                     </execution>
                 </executions>
             </plugin>
